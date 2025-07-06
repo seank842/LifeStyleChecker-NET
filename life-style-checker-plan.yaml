@@ -1,0 +1,53 @@
+epics:
+  - title: Patient Identification
+    features:
+      - title: Patient Validation
+        user_story: "As a user, I want to enter my NHS number, surname, and date of birth so I can be validated against the NHS API."
+        tasks:
+          - Build input form for NHS number, surname, and DOB
+          - Integrate API call to `/patients/{nhsNumber}`
+          - Handle response: Patient not found → show “Your details could not be found”
+          - Handle response: Details mismatch → show “Your details could not be found”
+          - Handle response: Underage → show “You are not eligible for this service”
+          - Handle response: Valid → advance to lifestyle questions
+          - Store API key securely via environment variable
+
+  - title: Lifestyle Assessment
+    features:
+      - title: Lifestyle Questionnaire
+        user_story: "As a patient, I want to answer 3 lifestyle questions so the system can calculate my risk score."
+        tasks:
+          - Render Yes/No radio buttons for Q1–Q3
+          - Validate that all questions are answered before submission
+      - title: Risk Score Calculation
+        user_story: "As the system, I want to calculate a lifestyle risk score using lifestyle answers and age bracket."
+        tasks:
+          - Calculate age from DOB
+          - Determine correct age bracket
+          - Apply scoring matrix to answers
+          - Sum total score
+
+  - title: User Feedback & Recommendation
+    features:
+      - title: Result Messaging
+        user_story: "As a user, I want clear feedback based on my risk score."
+        tasks:
+          - Display result message for score ≤ 3: encouragement
+          - Display result message for score ≥ 4: suggest appointment
+          - Style messages for clarity and accessibility
+
+  - title: Maintainable Scoring Logic (Advanced)
+    features:
+      - title: Configurable Scoring Rules
+        user_story: "As a developer, I want scoring logic and age brackets to be editable via config."
+        tasks:
+          - Load config from external JSON or API
+          - Implement fallback default config
+          - Validate config format and warn on errors
+
+  - title: Technical & Non-Functional Requirements
+    tasks:
+      - Set up CI pipeline with automated tests
+      - Write unit tests for validation, scoring, API integration
+      - Implement responsive styling and accessibility compliance
+      - Secure API key and avoid committing secrets
