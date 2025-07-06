@@ -50,4 +50,3 @@ epics:
       - Set up CI pipeline with automated tests
       - Write unit tests for validation, scoring, API integration
       - Implement responsive styling and accessibility compliance
-      - Secure API key and avoid committing secrets
