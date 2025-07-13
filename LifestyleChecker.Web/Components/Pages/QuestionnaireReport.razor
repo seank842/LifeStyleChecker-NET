@@ -1,0 +1,46 @@
+﻿@page "/questionnaire-report"
+@using System.Text.Json
+@using LifestyleChecker.Contracts.DTOs
+@using MudBlazor
+
+@inject NavigationManager NavigationManager
+
+<MudPaper Class="pa-6 mx-auto" MaxWidth="500px" Elevation="3">
+    <MudText Typo="Typo.h4" GutterBottom="true">Questionnaire Report</MudText>
+    @if (evaluationDTO != null)
+    {
+        @if (!evaluationDTO.SeekMedicalAdvice)
+        {
+            <MudAlert Severity="Severity.Success" Elevation="0" Dense="true" Class="mb-2">
+                <MudText Typo="Typo.subtitle1"><strong>Keep up the good work!</strong></MudText>
+            </MudAlert>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Warning" Elevation="0" Dense="true" Class="mb-2">
+                <MudText Typo="Typo.subtitle1"><strong>We are here for you!</strong></MudText>
+            </MudAlert>
+        }
+        <MudText Typo="Typo.body1">@evaluationDTO.Message</MudText>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info" Elevation="0" Dense="true">
+            No evaluation data available.
+        </MudAlert>
+    }
+</MudPaper>
+
+@code {
+    public EvaluationDTO? evaluationDTO { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("evaluation", out var value))
+        {
+            var json = Uri.UnescapeDataString(value.ToString());
+            evaluationDTO = JsonSerializer.Deserialize<LifestyleChecker.Contracts.DTOs.EvaluationDTO>(json);
+        }
+    }
+}

@@ -1,0 +1,42 @@
+﻿@using MudBlazor
+@inject LifestyleChecker.Web.Services.Authentication.States.PatientAuthState PatientAuthState
+@inject LifestyleChecker.Web.Services.Authentication.States.AdminAuthState AdminAuthState
+@inject NavigationManager Navigation
+
+@inherits LayoutComponentBase
+
+<MudThemeProvider/>
+<MudPopoverProvider />
+<MudDialogProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <AppBar />
+    </MudAppBar>
+    <MudDrawer open="@_hideNav" Elevation="1" Variant="DrawerVariant.Persistent">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="mud-main-content">
+        @Body
+    </MudMainContent>
+</MudLayout>
+@code{
+    private bool _hideNav => !Navigation.Uri.Contains("login");
+
+    protected override void OnInitialized()
+    {
+        var currentUri = Navigation.ToBaseRelativePath(Navigation.Uri).ToLowerInvariant();
+        if (currentUri.StartsWith("admin"))
+        {
+            if (!AdminAuthState.IsAuthenticated && currentUri != "admin/login")
+                Navigation.NavigateTo("admin/login", true);
+        }
+        else
+        {
+            if (!PatientAuthState.IsAuthenticated && currentUri != "login")
+                Navigation.NavigateTo("login", true);
+        }
+    }
+
+    
+}

@@ -1,0 +1,43 @@
+﻿@page "/reports"  
+@using LifestyleChecker.Contracts.DTOs  
+@inject IHttpClientFactory HttpClientFactory  
+@using Radzen.Blazor
+
+<h3>Reports</h3>  
+
+@if (evaluations.Any())
+{
+    <RadzenChart Style="height: 400px; width: 100%;">
+        <RadzenLineSeries Data="@chartData" 
+                          CategoryProperty="Date" 
+                          ValueProperty="TotalScore" 
+                          Title="Total Score Over Time" Smooth="true">
+            <RadzenMarkers Visible="true" />
+        </RadzenLineSeries>
+        <RadzenCategoryAxis FormatString="MM/dd/yyyy"/>
+        <RadzenValueAxis/>
+    </RadzenChart>
+}
+else
+{
+    <p>No reports available.</p>
+}
+
+@code {  
+    private IEnumerable<EvaluationDTO> evaluations = new List<EvaluationDTO>();
+    private IEnumerable<object> chartData = new List<object>();
+
+    protected override async Task OnInitializedAsync()  
+    {  
+        var client = HttpClientFactory.CreateClient("patientAPI");
+        var response = await client.GetAsync("api/Evaluation");  
+        if (response.IsSuccessStatusCode)  
+        {  
+            evaluations = await response.Content.ReadFromJsonAsync<IEnumerable<EvaluationDTO>>() ?? new List<EvaluationDTO>();
+            chartData = evaluations
+                .OrderBy(e => e.CreatedAt)
+                .Select(e => new { Date = e.CreatedAt, e.TotalScore }) // Date is DateTime
+                .ToList();
+        }  
+    }
+}

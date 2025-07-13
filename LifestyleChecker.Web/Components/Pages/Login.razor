@@ -1,0 +1,85 @@
+﻿@page "/login"
+@using LifestyleChecker.Web.Components.Elements
+@using MudBlazor
+@using System.ComponentModel.DataAnnotations
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory  
+@inject NavigationManager Navigation  
+@inject LifestyleChecker.Web.Services.Authentication.States.PatientAuthState PatientAuthState
+@inject IDialogService DialogService
+
+<LoadingOverlay Show="@ShowLoading" />
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Patient Login</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField Label="NHS Number" HelperText="All digits, 9 characters long"
+                                  @bind-Value="loginModel.NHSNumber" For="@(() => loginModel.NHSNumber)" Required="true" />
+                    <MudTextField Label="Surname" HelperText="Your last name that we have on file"
+                                  @bind-Value="loginModel.Surname" For="@(() => loginModel.Surname)" Required="true" />
+                    <MudTextField Label="Date of Birth" HelperText="Date format dd-MM-yyyy"
+                                  @bind-Value="loginModel.DateOfBirth" For="@(() => loginModel.DateOfBirth)" Required="true" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled" 
+                               Class="ml-auto">Login</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool ShowLoading = false;
+    private bool success = false;
+    private string? ErrorMessage { get; set; }
+
+    private async Task HandleLogin()
+    {
+        ShowLoading = true;
+        // Store credentials in PatientAuthState  
+        PatientAuthState.NHSNumber = loginModel.NHSNumber;
+        PatientAuthState.Surname = loginModel.Surname;
+        PatientAuthState.DateOfBirth = DateTime.Parse(loginModel.DateOfBirth);
+
+        // Use the named HttpClient that uses PatientAuthHandler  
+        var client = HttpClientFactory.CreateClient("patientAPI");
+
+        // Try to access a protected endpoint to verify credentials  
+        var request = new HttpRequestMessage(HttpMethod.Get, "api/User/Me");
+
+        var response = await client.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                 response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            ErrorMessage = await response.Content.ReadAsStringAsync();
+            PatientAuthState.Clear();
+        }
+        ShowLoading = false;
+    }
+
+    public class LoginModel  
+    {  
+        [Required]
+        [RegularExpression(@"^\d{9}$", ErrorMessage = "NHS Number must be exactly 9 digits.")]
+        public string NHSNumber { get; set; }
+        [Required]
+        public string Surname { get; set; }
+        [Required]
+        [RegularExpression(@"^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(19|20)\d\d$", ErrorMessage = "Date of Birth must be in the format dd-MM-yyyy.")]
+        public string DateOfBirth { get; set; }  
+    }
+}

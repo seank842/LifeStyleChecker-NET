@@ -1,0 +1,176 @@
+﻿@page "/questionnaire/{id:guid}"
+
+@using LifestyleChecker.Contracts.DTOs
+@using LifestyleChecker.SharedUtilities.Enums
+@using LifestyleChecker.Web.Components.Elements
+@using MudBlazor
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+
+@rendermode InteractiveServer
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
+@if (Questionnaire is not null)
+{
+    <EditForm Model="@questionnaireFormModel" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="HandleInvalid">
+        <DataAnnotationsValidator />
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12" sm="7">
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Questionnaire: @Questionnaire.Name</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        @foreach (var question in Questionnaire.Questions.OrderBy(q => q.Order))
+                        {
+                            <MudText>@question.QuestionText</MudText>
+                            @if (question.IsRequired)
+                            {
+                                <span class="mud-error-text">*</span>
+                            }
+                            @switch (question.AnswerType)
+                            {
+                                case QuestionAnswerType.YesNo:
+                                    <MudToggleGroup T="string"
+                                                    @bind-Value="@questionnaireFormModel.Responses[question.Id]"
+                                                    Exclusive="true">
+                                        @foreach (var option in question.AnswerOptions.OrderBy(a=>a.Order))
+                                        {
+                                            <MudToggleItem T="string" Value="@option.AnswerOption">
+                                                <ChildContent Context="item">@option.AnswerOption</ChildContent>
+                                            </MudToggleItem>
+                                        }
+                                    </MudToggleGroup>
+                                    break;
+                                case QuestionAnswerType.Text:
+                                    <MudTextField T="string" @bind-Value="@questionnaireFormModel.Responses[question.Id]" Label="Your answer" Required="@question.IsRequired" />
+                                    break;
+                                default:
+                                    <MudText Typo="Typo.body1">Questionnaire Question is malformed or unsupported</MudText>
+                                    ;
+                                    break;
+                            }
+                        }
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Submit</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+}
+else
+{
+    <LoadingOverlay Show="@ShowLoading" />
+}
+
+@code {
+    [Parameter]
+    public Guid id { get; set; }
+    public QuestionnaireDTO? Questionnaire { get; set; }
+    private QuestionnaireFormModel questionnaireFormModel = new QuestionnaireFormModel();
+
+    private bool ShowLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ShowLoading = true;
+        if (id.Equals(Guid.Empty))
+        {
+            throw new InvalidOperationException("Questionnaire ID parameter must be set.");
+        }
+        var client = HttpClientFactory.CreateClient("patientAPI");
+        var response = await client.GetAsync($"api/Questionnaires/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+
+            Questionnaire = await response.Content.ReadFromJsonAsync<QuestionnaireDTO>();
+            if(Questionnaire is null)
+            {
+                Snackbar.Add("Questionnaire not loadable.", Severity.Error);
+                return;
+            }
+            questionnaireFormModel.Responses = Questionnaire.Questions.ToDictionary(q => q.Id, q => (string?)null);
+            questionnaireFormModel.RequiredQuestions = Questionnaire.Questions
+                                  .Where(q => q.IsRequired)
+                                  .Select(q => q.Id)
+                                  .ToList();
+        }
+        else
+        {
+            Snackbar.Add("Failed to load questionnaire.", Severity.Error);
+        }
+        ShowLoading = false;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Questionnaire is not null)
+        {
+            foreach (var q in Questionnaire.Questions)
+            {
+                if (!questionnaireFormModel.Responses.ContainsKey(q.Id))
+                    questionnaireFormModel.Responses[q.Id] = string.Empty;
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        ShowLoading = true;
+        var responseDto = new QuestionnaireResponseDTO
+        {
+            QuestionnaireId = Questionnaire!.Id,
+            QuestionResponses = questionnaireFormModel.Responses.Select(r => new QuestionResponseDTO
+            {
+                QuestionId = r.Key,
+                Response = r.Value
+            }).ToList()
+        };
+
+        var client = HttpClientFactory.CreateClient("patientAPI");
+        var response = await client.PostAsJsonAsync("api/Evaluation", responseDto);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            Console.Error.WriteLine($"Error submitting questionnaire: {errorMessage}");
+            return;
+        }
+
+        var evaluationDTO = await response.Content.ReadFromJsonAsync<EvaluationDTO>();
+        if (evaluationDTO == null)
+        {
+            Console.Error.WriteLine("Received null EvaluationDTO from API.");
+            return;
+        }
+        var json = JsonSerializer.Serialize<EvaluationDTO>(evaluationDTO);
+        var encodedJson = Uri.EscapeDataString(json);
+        ShowLoading = false;
+        NavigationManager.NavigateTo($"/questionnaire-report?evaluation={encodedJson}");
+    }
+
+    private void HandleInvalid(EditContext context)
+    {
+        Snackbar.Add("Some required fields are missing", Severity.Error);
+    }
+
+    public class QuestionnaireFormModel : IValidatableObject
+    {
+        public Dictionary<Guid, string?> Responses { get; set; } = new();
+        public List<Guid> RequiredQuestions { get; set; } = new();
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            foreach (var questionId in RequiredQuestions)
+            {
+                if (!Responses.ContainsKey(questionId) || string.IsNullOrWhiteSpace(Responses[questionId]))
+                {
+                    yield return new ValidationResult($"This question is required.", new[] { $"{Responses[questionId]}" });
+                }
+            }
+        }
+    }
+}

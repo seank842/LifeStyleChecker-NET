@@ -1,0 +1,71 @@
+﻿@page "/admin/login"
+@using LifestyleChecker.Web.Components.Elements
+@using MudBlazor
+@using System.ComponentModel.DataAnnotations
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject LifestyleChecker.Web.Services.Authentication.States.AdminAuthState AdminAuthState
+@inject IDialogService DialogService
+
+<LoadingOverlay Show="@ShowLoading" />
+
+<EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <MudGrid Justify="Justify.Center" align-content-center>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Username" HelperText="Admin Username" For="@(() => loginModel.Username)" Required="true"
+                                  @bind-Value="loginModel.Username" />
+                    <MudTextField Label="Password" HelperText="Admin Password" For="@(() => loginModel.Password)" Type="password" Required="true"
+                                  @bind-Value="loginModel.Password" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled"
+                               Class="ml-auto">Login</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+@code {
+    private LoginModel loginModel = new();
+    private bool ShowLoading = false;
+    private string ErrorMessage;
+
+    private async Task HandleLogin()
+    {
+        ShowLoading = true;
+        ErrorMessage = string.Empty;
+        // Store credentials in AdminAuthState
+        AdminAuthState.Username = loginModel.Username;
+        AdminAuthState.Password = loginModel.Password;
+
+        // Use the named HttpClient that uses AdminAuthHandler
+        var client = HttpClientFactory.CreateClient("adminAPI");
+
+        // Try to access a protected admin endpoint to verify credentials
+        var request = new HttpRequestMessage(HttpMethod.Get, "api/User/AdminAuthCheck"); // Change to a real admin-protected endpoint
+
+        var response = await client.SendAsync(request);
+        if (response.IsSuccessStatusCode)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            ErrorMessage = "An unexpected error occurred.";
+            AdminAuthState.Clear();
+        }
+        ShowLoading = false;
+    }
+
+    public class LoginModel
+    {
+        [Required]
+        public string Username { get; set; }
+        [Required]
+        public string Password { get; set; }
+    }
+}

@@ -1,0 +1,55 @@
+﻿@using MudBlazor
+@inject LifestyleChecker.Web.Services.Authentication.States.PatientAuthState PatientAuthState
+@inject LifestyleChecker.Web.Services.Authentication.States.AdminAuthState AdminAuthState
+@inject NavigationManager Navigation
+@implements IDisposable
+@rendermode InteractiveServer
+
+<MudText Typo="Typo.h6" Class="ml-2">Lifestyle Checker</MudText>
+<MudSpacer />
+@if (!_isAuthenticated)
+{
+    <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="@(()=>NavigateToPatientLogin())">Patient Login</MudButton>
+    <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="@(()=>NavigateToAdminLogin())">Admin Login</MudButton>
+}
+else
+{
+    <MudButton Variant="Variant.Text" Color="Color.Inherit" OnClick="Logout">Logout</MudButton>
+}
+@code {
+    private bool _isAuthenticated => PatientAuthState.IsAuthenticated || AdminAuthState.IsAuthenticated;
+
+    protected override void OnInitialized()
+    {
+        PatientAuthState.AuthStateChanged += OnAuthStateChanged;
+        AdminAuthState.AuthStateChanged += OnAuthStateChanged;
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void NavigateToAdminLogin()
+    {
+        Navigation.NavigateTo("admin/login");
+    }
+
+    private void NavigateToPatientLogin()
+    {
+        Navigation.NavigateTo("login");
+    }
+
+    private void Logout()
+    {
+        PatientAuthState.Clear();
+        AdminAuthState.Clear();
+        Navigation.NavigateTo("login", true);
+    }
+
+    public void Dispose()
+    {
+        PatientAuthState.AuthStateChanged -= OnAuthStateChanged;
+        AdminAuthState.AuthStateChanged -= OnAuthStateChanged;
+    }
+}

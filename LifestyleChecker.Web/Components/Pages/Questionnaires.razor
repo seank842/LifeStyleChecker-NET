@@ -1,0 +1,54 @@
+﻿@page "/"
+@using LifestyleChecker.Contracts.DTOs
+
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+
+<h3>Questionnaires</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (questionnaires is not null && questionnaires.Count > 1)
+{
+    <ul>
+        @foreach (var q in questionnaires)
+        {
+            <li>
+                <a @onclick="() => NavigateToQuestionnaire(q.Id)" style="cursor:pointer">@q.Name</a>
+            </li>
+        }
+    </ul>
+}
+else if (questionnaires is not null && questionnaires.Count == 0)
+{
+    <p>No questionnaires available.</p>
+}
+
+@code {
+    private List<QuestionnaireDTO>? questionnaires;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("patientAPI");
+            questionnaires = await client.GetFromJsonAsync<List<QuestionnaireDTO>>("api/questionnaires");
+            if (questionnaires is not null && questionnaires.Count == 1)
+            {
+                Navigation.NavigateTo($"/questionnaire/{questionnaires[0].Id}");
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateToQuestionnaire(Guid id)
+    {
+        Navigation.NavigateTo($"/questionnaire/{id}");
+    }
+}

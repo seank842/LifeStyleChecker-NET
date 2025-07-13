@@ -1,0 +1,14 @@
+﻿@using MudBlazor
+@if (Show)
+{
+    <div class="loading-overlay">
+        <MudPaper Class="loading-content" Elevation="6">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+            <MudText Class="mt-4">Loading, please wait...</MudText>
+        </MudPaper>
+    </div>
+}
+@code{
+    [Parameter]
+    public bool Show { get; set; }
+}

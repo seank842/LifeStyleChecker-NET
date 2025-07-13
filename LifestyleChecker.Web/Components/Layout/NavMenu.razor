@@ -1,0 +1,16 @@
+﻿@inject LifestyleChecker.Web.Services.Authentication.States.PatientAuthState PatientAuthState
+@inject LifestyleChecker.Web.Services.Authentication.States.AdminAuthState AdminAuthState
+@using MudBlazor
+
+    <MudNavMenu>
+        <MudNavLink Href="/" Match="NavLinkMatch.All">Home</MudNavLink>
+        @if (PatientAuthState.IsAuthenticated)
+        {
+            <MudNavLink Href="/questionnaires">Lifestyle Checker</MudNavLink>
+            <MudNavLink Href="/reports">Lifestyle Report</MudNavLink>
+        }
+        @if (AdminAuthState.IsAuthenticated)
+        {
+            <MudNavLink Href="/admin/dashboard">Admin Dashboard</MudNavLink>
+        }
+    </MudNavMenu>

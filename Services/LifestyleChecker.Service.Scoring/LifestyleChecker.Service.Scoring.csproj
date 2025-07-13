@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Contracts\LifestyleChecker.Contracts.DTOs\LifestyleChecker.Contracts.DTOs.csproj" />
+    <ProjectReference Include="..\..\LifestyleChecker.Domain\LifestyleChecker.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

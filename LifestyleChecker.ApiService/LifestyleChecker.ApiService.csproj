@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\QuestionAnswerAndScoresController.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.Development.example.json" />
+    <None Include="appsettings.example.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure\LifestyleChecker.Infrastructure.Persistence\LifestyleChecker.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\LifestyleChecker.ServiceDefaults\LifestyleChecker.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Services\LifestyleChecker.Service.Scoring\LifestyleChecker.Service.Scoring.csproj" />
+    <ProjectReference Include="..\Services\LifestyleChecker.Services.PatientService\LifestyleChecker.Services.PatientService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.3" />
+  </ItemGroup>
+</Project>
