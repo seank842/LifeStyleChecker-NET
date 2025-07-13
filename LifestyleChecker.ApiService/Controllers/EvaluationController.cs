@@ -120,6 +120,8 @@ namespace LifestyleChecker.ApiService.Controllers
             _context.QuestionnaireResponses.Add(questionnaireResponseEntity);
             await _context.SaveChangesAsync();
 
+            var qResId = questionnaireResponseEntity.Id;
+
             await _cacheService.RemoveAsync($"{_cacheKey}:{nhsNumber}");
 
             var questionnaire = await _context.Questionnaires
@@ -137,7 +139,7 @@ namespace LifestyleChecker.ApiService.Controllers
                 return BadRequest("Questionnaire not found.");
             }
 
-            return Ok(_scoringService.EvaluateResults(questionnaire, questionnaire.QuestionnaireResponses.Last()));
+            return Ok(_scoringService.EvaluateResults(questionnaire, questionnaire.QuestionnaireResponses.First(qr=>qr.Id.Equals(qResId))));
         }
     }
 }
